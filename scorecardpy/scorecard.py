@@ -8,23 +8,23 @@ from .woebin import woepoints_ply1
 
 
 # coefficients in scorecard
-def ab(points0=600, odds0=1/19, pdo=50):
+def ab(points0=600, odds0=1 / 19, pdo=50):
     # sigmoid function
     # library(ggplot2)
     # ggplot(data.frame(x = c(-5, 5)), aes(x)) + stat_function(fun = function(x) 1/(1+exp(-x)))
-  
+
     # log_odds function
     # ggplot(data.frame(x = c(0, 1)), aes(x)) + stat_function(fun = function(x) log(x/(1-x)))
-  
+
     # logistic function
     # p(y=1) = 1/(1+exp(-z)),
-        # z = beta0+beta1*x1+...+betar*xr = beta*x
+    # z = beta0+beta1*x1+...+betar*xr = beta*x
     ##==> z = log(p/(1-p)),
-        # odds = p/(1-p) # bad/good <==>
-        # p = odds/1+odds
+    # odds = p/(1-p) # bad/good <==>
+    # p = odds/1+odds
     ##==> z = log(odds)
     ##==> score = a - b*log(odds)
-  
+
     # two hypothesis
     # points0 = a - b*log(odds0)
     # points0 - PDO = a - b*log(2*odds0)
@@ -32,14 +32,13 @@ def ab(points0=600, odds0=1/19, pdo=50):
     #     b = pdo/np.log(2)
     # else:
     #     b = -pdo/np.log(2)
-    b = pdo/np.log(2)
-    a = points0 + b*np.log(odds0) #log(odds0/(1+odds0))
-    
-    return {'a':a, 'b':b}
+    b = pdo / np.log(2)
+    a = points0 + b * np.log(odds0)  # log(odds0/(1+odds0))
+
+    return {'a': a, 'b': b}
 
 
-
-def scorecard(bins, model, xcolumns, points0=600, odds0=1/19, pdo=50, basepoints_eq0=False, digits=0):
+def scorecard(bins, model, xcolumns, points0=600, odds0=1 / 19, pdo=50, basepoints_eq0=False, digits=0):
     '''
     Creating a Scorecard
     ------
@@ -102,42 +101,42 @@ def scorecard(bins, model, xcolumns, points0=600, odds0=1/19, pdo=50, basepoints
     # Example II # credit score for both total and each variable
     score2 = sc.scorecard_ply(dt_sel, card, only_total_score = False)
     '''
-    
+
     # coefficients
     aabb = ab(points0, odds0, pdo)
-    a = aabb['a'] 
+    a = aabb['a']
     b = aabb['b']
     # odds = pred/(1-pred); score = a - b*log(odds)
-    
+
     # bins # if (is.list(bins)) rbindlist(bins)
     if isinstance(bins, dict):
         bins = pd.concat(bins, ignore_index=True)
     xs = [re.sub('_woe$', '', i) for i in xcolumns]
     # coefficients
-    coef_df = pd.Series(model.coef_[0], index=np.array(xs))\
-      .loc[lambda x: x != 0]#.reset_index(drop=True)
-    
+    coef_df = pd.Series(model.coef_[0], index=np.array(xs)) \
+        .loc[lambda x: x != 0]  # .reset_index(drop=True)
+
     # scorecard
     len_x = len(coef_df)
-    basepoints = a - b*model.intercept_[0]
+    basepoints = a - b * model.intercept_[0]
     card = {}
     if basepoints_eq0:
-        card['basepoints'] = pd.DataFrame({'variable':"basepoints", 'bin':np.nan, 'points':0}, index=np.arange(1))
+        card['basepoints'] = pd.DataFrame({'variable': "basepoints", 'bin': np.nan, 'points': 0}, index=np.arange(1))
         for i in coef_df.index:
-            card[i] = bins.loc[bins['variable']==i,['variable', 'bin', 'woe']]\
-              .assign(points = lambda x: round(-b*x['woe']*coef_df[i] + basepoints/len_x), ndigits=digits)\
-              [["variable", "bin", "points"]]
+            card[i] = bins.loc[bins['variable'] == i, ['variable', 'bin', 'woe']] \
+                .assign(points=lambda x: round(-b * x['woe'] * coef_df[i] + basepoints / len_x), ndigits=digits) \
+                [["variable", "bin", "points"]]
     else:
-        card['basepoints'] = pd.DataFrame({'variable':"basepoints", 'bin':np.nan, 'points':round(basepoints, ndigits=digits)}, index=np.arange(1))
+        card['basepoints'] = pd.DataFrame(
+            {'variable': "basepoints", 'bin': np.nan, 'points': round(basepoints, ndigits=digits)}, index=np.arange(1))
         for i in coef_df.index:
-            card[i] = bins.loc[bins['variable']==i,['variable', 'bin', 'woe']]\
-              .assign(points = lambda x: round(-b*x['woe']*coef_df[i]), ndigits=digits)\
-              [["variable", "bin", "points"]]
+            card[i] = bins.loc[bins['variable'] == i, ['variable', 'bin', 'woe']] \
+                .assign(points=lambda x: round(-b * x['woe'] * coef_df[i]), ndigits=digits) \
+                [["variable", "bin", "points"]]
     return card
 
 
-
-def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_na=True, var_kp = None):
+def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_na=True, var_kp=None):
     '''
     Score Transformation
     ------
@@ -201,7 +200,7 @@ def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_n
     # Example II # credit score for both total and each variable
     score2 = sc.scorecard_ply(dt_sel, card, only_total_score = False)
     '''
-  
+
     dt = dt.copy(deep=True)
     # remove date/time col
     # dt = rmcol_datetime_unique1(dt)
@@ -219,30 +218,31 @@ def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_n
     # length of x variables
     xs_len = len(xs)
     # initial datasets
-    dat = dt.loc[:,list(set(dt.columns)-set(xs))]
-    
+    dat = dt.loc[:, list(set(dt.columns) - set(xs))]
+
     # loop on x variables
     for i in np.arange(xs_len):
         x_i = xs[i]
         # print xs
-        if print_step>0 and bool((i+1)%print_step): 
-            print(('{:'+str(len(str(xs_len)))+'.0f}/{} {}').format(i, xs_len, x_i))
-        
-        cardx = card_df.loc[card_df['variable']==x_i]
+        if print_step > 0 and bool((i + 1) % print_step):
+            print(('{:' + str(len(str(xs_len))) + '.0f}/{} {}').format(i, xs_len, x_i))
+
+        cardx = card_df.loc[card_df['variable'] == x_i]
         dtx = dt[[x_i]]
         # score transformation
         dtx_points = woepoints_ply1(dtx, cardx, x_i, woe_points="points")
         dat = pd.concat([dat, dtx_points], axis=1)
-    
+
     # set basepoints
-    card_basepoints = list(card_df.loc[card_df['variable']=='basepoints','points'])[0] if 'basepoints' in card_df['variable'].unique() else 0
+    card_basepoints = list(card_df.loc[card_df['variable'] == 'basepoints', 'points'])[0] if 'basepoints' in card_df[
+        'variable'].unique() else 0
     # total score
-    dat_score = dat[xs+'_points']
-    dat_score.loc[:,'score'] = card_basepoints + dat_score.sum(axis=1)
+    dat_score = dat[xs + '_points']
+    dat_score.loc[:, 'score'] = card_basepoints + dat_score.sum(axis=1)
     # dat_score = dat_score.assign(score = lambda x: card_basepoints + dat_score.sum(axis=1))
     # return
     if only_total_score: dat_score = dat_score[['score']]
-    
+
     # check force kept variables
     if var_kp is not None:
         if isinstance(var_kp, str):
@@ -250,10 +250,9 @@ def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_n
         var_kp2 = list(set(var_kp) & set(list(dt)))
         len_diff_var_kp = len(var_kp) - len(var_kp2)
         if len_diff_var_kp > 0:
-            warnings.warn("Incorrect inputs; there are {} var_kp variables are not exist in input data, which are removed from var_kp. \n {}".format(len_diff_var_kp, list(set(var_kp)-set(var_kp2))) )
-        var_kp = var_kp2 if len(var_kp2)>0 else None
-    if var_kp is not None: dat_score = pd.concat([dt[var_kp], dat_score], axis = 1)
+            warnings.warn(
+                "Incorrect inputs; there are {} var_kp variables are not exist in input data, which are removed from var_kp. \n {}".format(
+                    len_diff_var_kp, list(set(var_kp) - set(var_kp2))))
+        var_kp = var_kp2 if len(var_kp2) > 0 else None
+    if var_kp is not None: dat_score = pd.concat([dt[var_kp], dat_score], axis=1)
     return dat_score
-    
-    
-

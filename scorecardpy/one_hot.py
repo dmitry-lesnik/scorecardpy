@@ -3,8 +3,9 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from .condition_fun import *
 
-def one_hot(dt, cols_skip = None, cols_encode = None, nacol_rm = False, 
-            replace_na = -1, category_to_integer = False):
+
+def one_hot(dt, cols_skip=None, cols_encode=None, nacol_rm=False,
+            replace_na=-1, category_to_integer=False):
     '''
     One Hot Encoding
     ------
@@ -50,7 +51,7 @@ def one_hot(dt, cols_skip = None, cols_encode = None, nacol_rm = False,
     dt_oh3 = sc.one_hot(dat, cols_skip = 'creditability', replace_na = 'median')
     dt_oh4 = sc.one_hot(dat, cols_skip = 'creditability', replace_na = None)
     '''
-    
+
     # if it is str, converting to list
     cols_skip, cols_encode = str_to_list(cols_skip), str_to_list(cols_encode)
     # category columns into integer
@@ -61,8 +62,8 @@ def one_hot(dt, cols_skip = None, cols_encode = None, nacol_rm = False,
         dt[cols_cate] = dt[cols_cate].apply(lambda x: pd.factorize(x, sort=True)[0])
     # columns encoding
     if cols_encode is None:
-        cols_encode = char_cols = [i for i in list(dt) if not is_numeric_dtype(dt[i]) 
-            and dt[i].dtypes != 'datetime64[ns]']
+        cols_encode = char_cols = [i for i in list(dt) if not is_numeric_dtype(dt[i])
+                                   and dt[i].dtypes != 'datetime64[ns]']
     else:
         cols_encode = x_variable(dt, y=cols_skip, x=cols_encode)
     # columns skip
@@ -72,10 +73,11 @@ def one_hot(dt, cols_skip = None, cols_encode = None, nacol_rm = False,
     if cols_encode is None or len(cols_encode) == 0:
         dt_new = dt
     else:
-        temp_dt = pd.get_dummies(dt[cols_encode], dummy_na = not nacol_rm)
+        temp_dt = pd.get_dummies(dt[cols_encode], dummy_na=not nacol_rm)
         # remove cols that unique len == 1 and has _nan
-        rm_cols_nan1 = [i for i in list(temp_dt) if len(temp_dt[i].unique())==1 and '_nan' in i]
+        rm_cols_nan1 = [i for i in list(temp_dt) if len(temp_dt[i].unique()) == 1 and '_nan' in i]
         dt_new = pd.concat([dt.drop(cols_encode, axis=1), temp_dt.drop(rm_cols_nan1, axis=1)], axis=1)
+
     # replace missing values with fillna
     def rep_na(x, repalce_na):
         if x.isna().values.any():
@@ -92,10 +94,10 @@ def one_hot(dt, cols_skip = None, cols_encode = None, nacol_rm = False,
                 fill_na = str(fill_na)
             x = x.fillna(fill_na)
         return x
+
     if replace_na is not None:
-        names_fillna = list(dt_new) 
-        if cols_skip is not None: names_fillna = list(set(names_fillna)-set(cols_skip))
+        names_fillna = list(dt_new)
+        if cols_skip is not None: names_fillna = list(set(names_fillna) - set(cols_skip))
         dt_new[names_fillna] = dt_new[names_fillna].apply(lambda x: rep_na(x, replace_na))
     # return
     return dt_new
-  
